@@ -19,7 +19,7 @@ Note: The batch file requires admin privileges. This is necessary if your config
 <div dir="rtl" style="font-family: Arial, sans-serif; font-size: 14px;">
 
 
-# فایل دسته‌ای Sing-box
+# فایل bat Sing-box
 
 این فایل دسته‌ای برای راحتی استفاده از Sing-box در ویندوز طراحی شده است.
 
