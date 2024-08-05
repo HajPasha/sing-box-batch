@@ -21,7 +21,7 @@ Note: The batch file requires admin privileges. This is necessary if your config
 
 # فایل bat Sing-box
 
-این فایل دسته‌ای برای راحتی استفاده از Sing-box در ویندوز طراحی شده است.
+این فایل bat برای راحتی استفاده از Sing-box در ویندوز طراحی شده است.
 
 1. هر دو فایل مورد نیاز را در یک پوشه دانلود کنید.
 2. بر روی `Sing-box.bat` کلیک کنید تا اجرا شود.
