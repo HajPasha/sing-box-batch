@@ -1,5 +1,3 @@
-It looks like you're creating a batch file for running Sing-box on Windows. Here’s a refined version of your instructions in both English and Persian for clarity:
-
 ---
 
 **English:**
