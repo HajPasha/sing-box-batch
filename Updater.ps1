@@ -375,6 +375,15 @@ function Start-SingBoxCore {
     Read-Host -Prompt "The Core Stopped ..."
 }
 
+function Open-GitHubLink {
+$answer = Read-Host "Would you like to open the URL in your default browser? (y/n)"
+if ($answer -eq 'y') 
+    {
+    $url = "https://github.com/PashaGH8101/sing-box-batch"
+    Start-Process $url
+    }
+
+}
 
 
 # Main menu logic
@@ -387,18 +396,28 @@ do {
     |  __// _` |/ __|| '_ \  / _` |
     | |  | (_| |\__ \| | | || (_| |
     \_|   \__,_||___/|_| |_| \__,_|
-                                   
-                                   
-    
-                           
+                                                          
 "@
 
+$summary = @"
+******************************************************
+*                                                    *
+*    I create this tool for easier usage of          *
+*    sing-box core inside Windows. With just a few   *
+*    clicks, you can use this absolutely             *
+*    anti-censorship core.                           *
+*                                                    *
+******************************************************
+"@
+    
     Write-Host $asciiArt -ForegroundColor Green
-    Write-Host "I create this tool for easier usage of sing-box core inside windows with just few clicks you can Use this abosultely anti-censorship Core" -ForegroundColor Yellow
-    Write-Color "1. Install or Update the Sing-Box core" -Color DarkYellow
-    Write-Color "2. Update the config file (Fetch the latest from a URL)" -Color DarkYellow
-    Write-Color "3. Start the Sing-box Core" -Color DarkYellow
-    Write-Color "0. Exit" -Color DarkYellow
+    Write-Host $summary -ForegroundColor Green
+    Write-Host "https://github.com/PashaGH8101/sing-box-batch" -ForegroundColor Magenta
+    Write-Color "1. Install or Update the Sing-Box core" -Color Yellow
+    Write-Color "2. Update the config file (Fetch the latest from a URL)" -Color Yellow
+    Write-Color "3. Start the Sing-box Core" -Color Yellow
+    Write-Color "4. Link to My Github For latest Information and Updates" -Color Yellow
+    Write-Color "0. Exit" -Color Yellow
     $choice = Read-Host "Select an option"
 
     switch ($choice) {
@@ -411,6 +430,9 @@ do {
         }
         '3' {
             Start-SingBoxCore
+        }
+        '4' {
+            Open-GitHubLink
         }
         '0' {
             Write-Color "Exiting..." -Color Cyan
