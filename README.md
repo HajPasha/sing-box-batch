@@ -1,6 +1,8 @@
 
 **English:**
 
+[برای متن فارسی کلیک کنید](https://github.com/PashaGH8101/sing-box-batch?tab=readme-ov-file#%D9%81%D8%A7%DB%8C%D9%84-bat-sing-box)
+
 # Sing-box Batch File
 ![image](https://github.com/user-attachments/assets/bddb5cc0-a6e4-4783-b822-d91d6abe09eb)
 
