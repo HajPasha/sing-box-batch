@@ -381,7 +381,8 @@ function Start-SingBoxCore {
     # Request elevation if not running as admin
     if (-not (Test-Admin)) {
         $arguments = "& { Start-Process PowerShell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"' -Verb RunAs }"
-        Start-Process PowerShell -ArgumentList $arguments -Verb RunAs
+        # Start-Process PowerShell -ArgumentList $arguments -Verb RunAs
+        Start-Process -FilePath ".\sing-box.exe" -ArgumentList "run" -NoNewWindow -Wait
         UpdateLog -Message "The Core Started Successfully"
         return
     }
