@@ -3,9 +3,17 @@
 function Write-Color {
     param (
         [string]$Text,
-        [ConsoleColor]$Color
+        [ConsoleColor]$Color,
+        [bool]$Log = $false  # Default value is false, meaning no logging unless specified
     )
+
+    # Write the text to the console with the specified color
     Write-Host $Text -ForegroundColor $Color
+
+    # If the Log parameter is true, save the text to the log file
+    if ($Log) {
+        UpdateLog -Message $Text
+    }
 }
 
 # Function to validate URL format
@@ -96,7 +104,7 @@ function Update-ConfigFile {
         # Validate the URL format
         Write-Color "Validating URL format: $url..." -Color Blue
         if (-not (Test-UrlFormat -url $url)) {
-            Write-Color "The URL format is invalid. Please provide a valid URL." -Color Red
+            Write-Color "The URL format is invalid. Please provide a valid URL." -Color Red 
             continue
         }
 
@@ -125,7 +133,7 @@ function Update-ConfigFile {
         }
 
         # Run the check command on the downloaded file
-        Write-Color "Running check command on $outputFile" -Color Cyan
+        Write-Color "Running check command on $outputFile" -Color Cyan 
         $checkResult = ExecuteSingBoxCommand -filePath ".\sing-box.exe" -arguments "check -c $outputFile"
         
         if ($checkResult.ExitCode -eq 0) {
@@ -155,18 +163,16 @@ function Update-ConfigFile {
                 Write-Color "The operation was a success." -Color Green
                 Write-Color "The link you provided is: $url" -Color Green
                 Write-Color "The time consumed: $formattedTime" -Color Green
-                Write-Color "Thank you for using this file." -Color Green
-                Write-Color "This file is created by Pasha." -Color Green
                 break
             } else {
-                Write-Color "Format command failed with exit code $($formatResult.ExitCode)." -Color Red
-                Write-Color "Error output: $($formatResult.Error)" -Color Red
-                Write-Color "Command output: $($formatResult.Output)" -Color Yellow
+                Write-Color "Format command failed with exit code $($formatResult.ExitCode)." -Color Red -Log $true
+                Write-Color "Error output: $($formatResult.Error)" -Color Red -Log $true
+                Write-Color "Command output: $($formatResult.Output)" -Color Yellow -Log $true
             }
         } else {
-            Write-Color "Check command failed with exit code $($checkResult.ExitCode)." -Color Red
-            Write-Color "Error output: $($checkResult.Error)" -Color Red
-            Write-Color "Command output: $($checkResult.Output)" -Color Yellow
+            Write-Color "Check command failed with exit code $($checkResult.ExitCode)." -Color Red -Log $true
+            Write-Color "Error output: $($checkResult.Error)" -Color Red -Log $true
+            Write-Color "Command output: $($checkResult.Output)" -Color Yellow -Log $true
         }
     } while ($true)
 }
@@ -214,8 +220,8 @@ function Get-LatestSingBoxVersionInfo {
             Architectures = $architectureInfo
         }
     } catch {
-        Write-Color "Failed to get the latest release version info." -Color Red
-        Write-Color "Exception: $($_.Exception.Message)" -Color Red
+        Write-Color "Failed to get the latest release version info." -Color Red -Log $true
+        Write-Color "Exception: $($_.Exception.Message)" -Color Red -Log $true
         return $null
     }
 }
@@ -232,51 +238,58 @@ function Update-SingBoxCore {
             # Extract version number from the output
             if ($versionResult.Output -match 'sing-box version (\d+\.\d+\.\d+)') {
                 $currentVersion = $matches[1]
-                Write-Color "The current version is: $currentVersion" -Color Green
+                Write-Color "The current version is: $currentVersion" -Color Green 
+
+                
             } else {
-                Write-Color "Failed to extract version from the output." -Color Red
-                Write-Color "Full output: $($versionResult.Output)" -Color Yellow
+                Write-Color "Failed to extract version from the output." -Color Red -Log $true
+                Write-Color "Full output: $($versionResult.Output)" -Color Yellow -Log $true
+
                 return
             }
         } else {
-            Write-Color "Failed to get Sing-Box version." -Color Red
-            Write-Color "Error output: $($versionResult.Error)" -Color Red
-            Write-Color "Command output: $($versionResult.Output)" -Color Yellow
+            Write-Color "Failed to get Sing-Box version." -Color Red -Log $true
+            Write-Color "Error output: $($versionResult.Error)" -Color Red -Log $true
+            Write-Color "Command output: $($versionResult.Output)" -Color Yellow -Log $true
+
             return
         }
     } else {
-        Write-Color "Sing-Box executable not found at $exePath." -Color Red
+        Write-Color "Sing-Box executable not found at $exePath." -Color Red -Log $true
+
         $currentVersion = $null
     }
 
     # Get and print system architecture
     $systemInfo = Get-ComputerInfo
     $architecture = $systemInfo.OSArchitecture
-    Write-Color "System architecture: $architecture" -Color Green
+    Write-Color "System architecture: $architecture" -Color Green 
 
     # Define a function to get the latest version info
     $latestInfo = Get-LatestSingBoxVersionInfo
     if ($latestInfo) {
         $latestVersion = $latestInfo.Version
-        Write-Color "Latest Sing-Box Version: $latestVersion" -Color Blue
+        Write-Color "Latest Sing-Box Version: $latestVersion" -Color Blue 
 
         # Check if the version is up-to-date
         if ($singBoxExists -and $currentVersion -eq $latestVersion) {
-            Write-Color "You are using the latest version." -Color Green
+            Write-Color "You are using the latest version." -Color Green 
+
         } else {
-            Write-Color "Updating Sing-Box to the latest version..." -Color Cyan
+            Write-Color "Updating Sing-Box to the latest version..." -Color Cyan -Log $true
+
 
             # Map architecture to the expected key
             $architectureKey = switch ($architecture) {
                 "64-bit" { "64bit" }
                 "32-bit" { "32bit" }
                 "ARM64"  { "arm64" }
-                default { Write-Color "Unknown architecture: $architecture" -Color Red; $null }
+                default { Write-Color "Unknown architecture: $architecture" -Color Red -Log $true ; $null }
             }
 
             if ($architectureKey) {
                 # Debugging output to check the structure of $latestInfo
-                Write-Color "Latest info structure: $($latestInfo | ConvertTo-Json -Depth 3)" -Color Cyan
+                Write-Color "Latest info structure: $($latestInfo | ConvertTo-Json -Depth 3)" -Color Cyan -Log $true
 
                 if ($latestInfo.Architectures) {
                     $downloadInfo = $latestInfo.Architectures[$architectureKey]
@@ -295,7 +308,7 @@ function Update-SingBoxCore {
 
                                 # Download the latest version
                                 Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -ErrorAction Stop
-                                Write-Color "Downloaded latest Sing-Box version." -Color Green
+                                Write-Color "Downloaded latest Sing-Box version." -Color Green -Log $true
 
                                 # Create the extraction directory if it does not exist
                                 if (-not (Test-Path $extractedFolderPath)) {
@@ -303,9 +316,9 @@ function Update-SingBoxCore {
                                 }
 
                                 # Extract the ZIP file to the temporary directory
-                                Write-Color "Extracting the ZIP file..." -Color Cyan
+                                Write-Color "Extracting the ZIP file..." -Color Cyan -Log $true
                                 Expand-Archive -Path $zipFilePath -DestinationPath $extractedFolderPath -Force
-                                Write-Color "Extraction complete." -Color Green
+                                Write-Color "Extraction complete." -Color Green -Log $true
 
                                 # Move the extracted files to the original directory
                                 $extractedExePath = Join-Path -Path $extractedFolderPath -ChildPath $extractDir
@@ -318,29 +331,38 @@ function Update-SingBoxCore {
                                     # Clean up
                                     Remove-Item -Path $zipFilePath -Force
                                     Remove-Item -Path $extractedFolderPath -Recurse -Force
-                                    Write-Color "Updated Sing-Box to version $latestVersion." -Color Green
+                                    Write-Color "Updated Sing-Box to version $latestVersion." -Color Green -Log $true
+
                                 } else {
-                                    Write-Color "sing-box.exe not found in the extracted files." -Color Red
+                                    Write-Color "sing-box.exe not found in the extracted files." -Color Red -Log $true
+
                                 }
                             } else {
-                                Write-Color "The download URL returned status code $($response.StatusCode)." -Color Red
+                                Write-Color "The download URL returned status code $($response.StatusCode)." -Color Red -Log $true
+
                             }
                         } catch {
-                            Write-Color "Failed to download or extract the latest version." -Color Red
-                            Write-Color "Exception: $($_.Exception.Message)" -Color Red
+                            Write-Color "Failed to download or extract the latest version." -Color Red -Log $true
+                            Write-Color "Exception: $($_.Exception.Message)" -Color Red -Log $true
+
                         }
                     } else {
-                        Write-Color "No download information found for the architecture key: $architectureKey" -Color Red
+                        Write-Color "No download information found for the architecture key: $architectureKey" -Color Red -Log $true
+
                     }
                 } else {
-                    Write-Color "Architectures section in latest info is missing or null." -Color Red
+                    Write-Color "Architectures section in latest info is missing or null." -Color Red -Log $true
+
                 }
             } else {
-                Write-Color "Invalid architecture key: $architecture" -Color Red
+                Write-Color "Invalid architecture key: $architecture" -Color Red -Log $true
+
+
             }
         }
     } else {
-        Write-Color "Failed to get the latest release version info." -Color Red
+        Write-Color "Failed to get the latest release version info." -Color Red -Log $true
+
     }
 }
 
@@ -360,13 +382,14 @@ function Start-SingBoxCore {
     if (-not (Test-Admin)) {
         $arguments = "& { Start-Process PowerShell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"' -Verb RunAs }"
         Start-Process PowerShell -ArgumentList $arguments -Verb RunAs
+        UpdateLog -Message "The Core Started Successfully"
         return
     }
 
     # Switch to script directory
     Set-Location (Split-Path -Parent $ScriptPath)
 
-    # Start sing-box.exe in a new cmd window with additional flags
+    # Start sing-box.exe in a new cmd window 
     Start-Process -FilePath ".\sing-box.exe" -ArgumentList "run " -NoNewWindow -Wait
 
 
@@ -384,6 +407,52 @@ if ($answer -eq 'y')
     }
 
 }
+# Function to create and update log files for debugging and other purposes
+function UpdateLog {
+    param (
+        [string]$Message
+    )
+
+    # Define the log file path
+    $LogFilePath = "log.txt"
+
+    # Get the current date and time
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Create the log entry
+    $logEntry = "$timestamp - $Message"
+
+    # Append the log entry to the log file
+    Add-Content -Path $LogFilePath -Value $logEntry
+}
+
+# Function to read the log and search for a specific query
+function ReadLog {
+    param (
+        [string]$SearchTerm
+    )
+
+    # Define the log file path
+    $LogFilePath = "log.txt"
+
+    # Check if the log file exists
+    if (-Not (Test-Path -Path $LogFilePath)) {
+        Write-Output "Log file not found."
+        return
+    }
+
+    # Read the log file and search for the term
+    $logEntries = Get-Content -Path $LogFilePath
+    $matchingEntries = $logEntries | Select-String -Pattern $SearchTerm
+
+    # Output the matching entries
+    if ($matchingEntries) {
+        $matchingEntries
+    } else {
+        Write-Output "No matching entries found for '$SearchTerm'."
+    }
+}
+
 
 
 # Main menu logic
@@ -412,8 +481,8 @@ $summary = @"
     
     Write-Host $asciiArt -ForegroundColor Green
     Write-Host $summary -ForegroundColor Green
-    Write-Host "https://github.com/PashaGH8101/sing-box-batch" -ForegroundColor Magenta
-    Write-Color "1. Install or Update the Sing-Box core" -Color Yellow
+    Write-Host "https://github.com/PashaGH8101/sing-box-batch" -ForegroundColor Magenta 
+    Write-Color "1. Install or Update the Sing-Box core" -Color Yellow 
     Write-Color "2. Update the config file (Fetch the latest from a URL)" -Color Yellow
     Write-Color "3. Start the Sing-box Core" -Color Yellow
     Write-Color "4. Link to My Github For latest Information and Updates" -Color Yellow
