@@ -40,6 +40,10 @@
    
    - **گزینه دوم: Update the config file by a subscription link (Fetch the latest subscription from a URL)**
      - این گزینه به شما امکان می‌دهد آخرین نسخه لینک اشتراک خود (فرمت JSON) را از یک لینک HTTPS دانلود کنید. (حتما لینکی که به برنامه میدهید با http یا https شروع شود در غیر این صورت خطا خواهد داد)
+     - در این قسمت اگر لینک `sing-box://` را هم وارد کنید نیز قبول میکند (در پنل S-UI اخرین گزینه به نام Sing-box این نوع لینک را ارائه میدهد)
+       
+     ![image](https://github.com/user-attachments/assets/5c469130-c02f-4dae-becd-96505f4397d4)
+
        
      - بررسی درستی لینک و فرمت JSON انجام می‌شود. محتوای لینک باید مانند تصویر زیر باشد:
 ![image](https://github.com/user-attachments/assets/3292bc4a-4c47-4f7b-acd1-40baca70d9f0)
