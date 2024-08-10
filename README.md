@@ -1,6 +1,6 @@
 
 
-[For English description click here]([https://github.com/PashaGH8101/sing-box-batch?tab=readme-ov-file#%D9%81%D8%A7%DB%8C%D9%84-bat-sing-box](https://github.com/PashaGH8101/sing-box-batch?tab=readme-ov-file#sing-box-batch-file-1))
+[For English description click here]([https://github.com/PashaGH8101/sing-box-batch?tab=readme-ov-file#%D9%81%D8%A7%DB%8C%D9%84-bat-sing-box](https://github.com/PashaGH8101/sing-box-batch?tab=readme-ov-file#sing-box-batch-file-1)
 
 
 #  Sing-box Batch File
