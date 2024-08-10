@@ -70,7 +70,7 @@ function ExtractUrlFromSingBoxLink {
     # Extract the URL parameter from the sing-box link
     if ($url -match "^sing-box:\/\/.*\?url=(?<encodedUrl>[^#]+)") {
         $encodedUrl = $matches['encodedUrl']
-        $decodedUrl = [System.Web.HttpUtility]::UrlDecode($encodedUrl)
+        $decodedUrl = [System.Uri]::UnescapeDataString($encodedUrl)
         return $decodedUrl
     } else {
         Write-Color "Failed to extract URL from the sing-box link." -Color Red
