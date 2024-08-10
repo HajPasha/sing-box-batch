@@ -4,6 +4,7 @@
 
 
 #  Sing-box Batch File
+![image](https://github.com/user-attachments/assets/bddb5cc0-a6e4-4783-b822-d91d6abe09eb)
 
 این فایل bat برای راحتی استفاده از Sing-box در ویندوز طراحی شده است.
 
@@ -66,7 +67,7 @@
 
 
 # Sing-box Batch File
-![image](https://github.com/user-attachments/assets/bddb5cc0-a6e4-4783-b822-d91d6abe09eb)
+
 
 This batch file simplifies Sing-box on Windows.
 
