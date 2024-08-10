@@ -21,8 +21,11 @@ function Test-UrlFormat {
     param (
         [string]$url
     )
-    
-    return $url -match '^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:[0-9]{1,5})?(\/.*)?$'
+    # Check if the URL starts with http, https, or sing-box
+    if ($url -match "^(http|https|sing-box):\/\/") {
+        return $true
+    }
+    return $false
 }
 
 # Function to check URL accessibility and content
@@ -60,6 +63,20 @@ function CheckUrlAccessibilityAndContent {
     }
 }
 
+function ExtractUrlFromSingBoxLink {
+    param (
+        [string]$url
+    )
+    # Extract the URL parameter from the sing-box link
+    if ($url -match "^sing-box:\/\/.*\?url=(?<encodedUrl>[^#]+)") {
+        $encodedUrl = $matches['encodedUrl']
+        $decodedUrl = [System.Web.HttpUtility]::UrlDecode($encodedUrl)
+        return $decodedUrl
+    } else {
+        Write-Color "Failed to extract URL from the sing-box link." -Color Red
+        return $null
+    }
+}
 # Function to execute a command and capture output and errors
 function ExecuteSingBoxCommand {
     param (
@@ -106,6 +123,15 @@ function Update-ConfigFile {
         if (-not (Test-UrlFormat -url $url)) {
             Write-Color "The URL format is invalid. Please provide a valid URL." -Color Red 
             continue
+        }
+
+        # If the URL is a sing-box link, extract the actual HTTP/HTTPS URL
+        if ($url -like "sing-box://*") {
+            $url = ExtractUrlFromSingBoxLink -url $url
+            if (-not $url) {
+                continue
+            }
+            Write-Color "Extracted HTTP/HTTPS URL: $url" -Color Blue
         }
 
         # Check URL accessibility and content
@@ -458,6 +484,7 @@ function ReadLog {
 
 # Main menu logic
 do {
+    
     $asciiArt = @"
 
     ______            _            
