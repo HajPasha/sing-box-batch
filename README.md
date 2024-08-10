@@ -95,6 +95,3 @@ This batch file simplifies Sing-box on Windows.
    - **Option 4: Link to My Github for Latest Information and Updates**
      - This option opens the repository link in your computer's browser.
 
----
-
-**Persian:**
