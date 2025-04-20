@@ -28,14 +28,29 @@ function Test-UrlFormat {
     return $false
 }
 
+function GetVesionInfo{
+    $versionResult = ExecuteSingBoxCommand -filePath ".\sing-box.exe" -arguments "--version"
+
+if ($versionResult.ExitCode -eq 0) {
+    if ($versionResult.Output -match 'sing-box version (\d+\.\d+\.\d+)') {
+        $currentVersion = $matches[1]
+        return $currentVersion
+    } else {
+        Write-Color "Failed to extract version from the output." -Color Red -Log $true
+        Write-Color "Full output: $($versionResult.Output)" -Color Yellow -Log $true
+        return
+    }
+}
+}
 # Function to check URL accessibility and content
 function CheckUrlAccessibilityAndContent {
     param (
         [string]$url
     )
-    
+    $currentVersion =  GetVesionInfo
     try {
-        $response = Invoke-WebRequest -Uri $url -ErrorAction Stop -TimeoutSec 10
+        $headers = @{ 'User-Agent' = "SFA/$currentVersion" }
+        $response = Invoke-WebRequest -Uri $url -ErrorAction Stop -TimeoutSec 10 -Headers $headers 
         $statusCode = $response.StatusCode
         $contentType = $response.Headers.'Content-Type'
         $content = $response.Content
@@ -109,8 +124,26 @@ function Update-ConfigFile {
     $startTime = Get-Date
 
     do {
-        # Prompt user for URL
-        $url = Read-Host "Enter the URL to download"
+$lastSubUrl = ReadLog -SearchTerm "Saved subscription URL" | Select-Object -Last 1
+
+# Build the prompt
+$prompt = "Enter the URL to download"
+if ($lastSubUrl) {
+    if ($lastSubUrl -match 'Saved subscription URL:\s*(https?://\S+)') {
+        $lastSavedUrl = $matches[1]
+        $prompt += "`n Last Sub URL: $lastSavedUrl `n (leave blank to use the last Sub URL)"
+    }
+}
+
+# Ask for URL
+$url = Read-Host $prompt
+
+# If user leaves blank, use the last saved URL
+if ([string]::IsNullOrWhiteSpace($url) -and $lastSubUrl) {
+
+    $url = ($lastSubUrl -split 'Saved subscription URL:\s*')[1]
+    Write-Color "Using last saved subscription URL: $url" -Color Yellow
+}
 
         # Check if URL is empty
         if ([string]::IsNullOrWhiteSpace($url)) {
@@ -146,7 +179,12 @@ function Update-ConfigFile {
         # Use PowerShell to download the file
         Write-Color "Downloading from $url..." -Color Cyan
         try {
-            Invoke-WebRequest -Uri $url -OutFile $outputFile -ErrorAction Stop
+            $currentVersion =  GetVesionInfo 
+            $headers = @{ 'User-Agent' = "SFA/$currentVersion" }
+            Invoke-WebRequest -Uri $url -OutFile $outputFile -Headers $headers -ErrorAction Stop
+
+            # Update Log to save the latest SUB URL
+            UpdateLog -Message "Saved subscription URL: $url"
             if (Test-Path $outputFile) {
                 Write-Color "Download successful. File saved as $outputFile." -Color Green
             } else {
@@ -208,7 +246,11 @@ function Get-LatestSingBoxVersionInfo {
     $versionInfoUrl = "https://api.github.com/repos/SagerNet/sing-box/releases/latest"
     
     try {
-        $response = Invoke-WebRequest -Uri $versionInfoUrl -ErrorAction Stop -Headers @{ "Accept" = "application/vnd.github.v3+json" }
+        $headers = @{
+            "Accept" = "application/vnd.github.v3+json"
+            "User-Agent" = "Mozilla/5.0"
+        }
+        $response = Invoke-WebRequest -Uri $versionInfoUrl -ErrorAction Stop -Headers $headers
         $releaseInfo = $response.Content | ConvertFrom-Json
 
         # Extract version and architecture info
@@ -333,6 +375,10 @@ function Update-SingBoxCore {
                                 $extractedFolderPath = Join-Path -Path $scriptDirectory -ChildPath "sing-box-latest"
 
                                 # Download the latest version
+                                $headers = @{
+                                    "Accept" = "application/vnd.github.v3+json"
+                                    "User-Agent" = "Mozilla/5.0"
+                                }
                                 Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -ErrorAction Stop
                                 Write-Color "Downloaded latest Sing-Box version." -Color Green -Log $true
 
@@ -394,34 +440,44 @@ function Update-SingBoxCore {
 
 function Start-SingBoxCore {
     param (
-        [string]$ScriptPath = $MyInvocation.MyCommand.Path
+        [string]$ScriptPath
     )
+    # Use current script path if not passed
+    if (-not $ScriptPath -or [string]::IsNullOrWhiteSpace($ScriptPath)) {
+        $ScriptPath = $MyInvocation.MyCommand.Definition
+    }
 
-    # Check if the script is running with elevated privileges
+    if ([string]::IsNullOrWhiteSpace($ScriptPath)) {
+        Write-Host "❌ Error: Script path is empty." -ForegroundColor Red
+        exit 1
+    }
+
+    # Get script directory
+    $ScriptDir = Split-Path -Parent $ScriptPath
+    Set-Location -Path $ScriptDir
+
+    # Check for admin privileges
     function Test-Admin {
         $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
         $principal = New-Object System.Security.Principal.WindowsPrincipal($identity)
         return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     }
 
-    # Request elevation if not running as admin
+    # If not admin, relaunch script as admin
     if (-not (Test-Admin)) {
-        $arguments = "& { Start-Process PowerShell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"' -Verb RunAs }"
-        # Start-Process PowerShell -ArgumentList $arguments -Verb RunAs
-        Start-Process -FilePath ".\sing-box.exe" -ArgumentList "run" -NoNewWindow -Wait
-        UpdateLog -Message "The Core Started Successfully"
-        return
+        Write-Host "[DEBUG] Not running as admin. Relaunching as admin..." -ForegroundColor Yellow
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"" -Verb RunAs
+        exit
     }
 
-    # Switch to script directory
-    Set-Location (Split-Path -Parent $ScriptPath)
+    # Start sing-box core
+    Write-Host "Starting sing-box..." -ForegroundColor Green
+    Start-Process -FilePath ".\sing-box.exe" -ArgumentList "run" -NoNewWindow -Wait
 
-    # Start sing-box.exe in a new cmd window 
-    Start-Process -FilePath ".\sing-box.exe" -ArgumentList "run " -NoNewWindow -Wait
+    # Log success (assuming UpdateLog exists in your scope)
+    UpdateLog -Message "The Core Started Successfully"
 
-
-
-    # Pause to allow the user to read messages
+    # Wait for user before closing
     Read-Host -Prompt "The Core Stopped ..."
 }
 
@@ -459,25 +515,16 @@ function ReadLog {
         [string]$SearchTerm
     )
 
-    # Define the log file path
     $LogFilePath = "log.txt"
 
-    # Check if the log file exists
     if (-Not (Test-Path -Path $LogFilePath)) {
-        Write-Output "Log file not found."
-        return
+        return @()
     }
 
-    # Read the log file and search for the term
     $logEntries = Get-Content -Path $LogFilePath
-    $matchingEntries = $logEntries | Select-String -Pattern $SearchTerm
+    $matchingEntries = $logEntries | Select-String -Pattern $SearchTerm | ForEach-Object { $_.Line }
 
-    # Output the matching entries
-    if ($matchingEntries) {
-        $matchingEntries
-    } else {
-        Write-Output "No matching entries found for '$SearchTerm'."
-    }
+    return $matchingEntries # No Write-Output!
 }
 
 
@@ -506,7 +553,7 @@ $summary = @"
 *                                                    *
 ******************************************************
 "@
-    
+
     Write-Host $asciiArt -ForegroundColor Green
     Write-Host $summary -ForegroundColor Green
     Write-Host "https://github.com/PashaGH8101/sing-box-batch" -ForegroundColor Magenta 
@@ -526,7 +573,7 @@ $summary = @"
             Update-ConfigFile
         }
         '3' {
-            Start-SingBoxCore
+            Start-SingBoxCore -ScriptPath $MyInvocation.MyCommand.Definition
         }
         '4' {
             Open-GitHubLink
